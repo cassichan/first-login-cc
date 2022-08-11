@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { initializeApp } from "firebase/app";
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
 
 //credentials to connect to firebase project
 const firebaseConfig = {
@@ -12,30 +18,56 @@ const firebaseConfig = {
   appId: "1:447326846454:web:03168b2fd1732ba3ac9bd7",
 };
 
-//prop
 export default function Login({ setIsLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const handleSignUp = async () => {
-    //connect to firebase project
+
+  const connectAuth = async () => {
+    //connec to fb project
     const app = initializeApp(firebaseConfig);
-    //send email and pw to firebase auth
-
     //connect to auth
-    const auth = getAuth(app);
+    return getAuth(app);
+  };
 
+  const handleLogin = async () => {
+    const auth = await connectAuth();
+    const user = await signInWithEmailAndPassword(auth, email, password).catch(
+      (err) => alert(err.message)
+    );
+    if (user) {
+      console.log(user.user);
+      setIsLoggedIn(true);
+    }
+  };
+
+  //Sign in with google
+  const handleGoogleLogin = async () => {
+    const auth = await connectAuth();
+    const provider = new GoogleAuthProvider();
+    //When hit button, it will pop up google authentication
+    const user = await signInWithPopup(auth, provider).catch((err) => {
+      alert(err.message);
+      if (user) {
+        console.log(user.user);
+        setIsLoggedIn(true);
+      }
+    });
+  };
+
+  const handleSignUp = async () => {
+    const auth = await connectAuth();
     //create new user
     const user = await createUserWithEmailAndPassword(auth, email, password);
-
     //if all ok...
     if (user) {
       setIsLoggedIn(true);
       console
-        .log(user)
+        .log(user.user)
         //if error, popup error
         .catch((err) => alert(err.message));
     }
   };
+
   return (
     //Make it so it does not automatically submit form when hit button
     <form onSubmit={(e) => e.preventDefault()}>
@@ -64,7 +96,10 @@ export default function Login({ setIsLoggedIn }) {
         />
       </label>
       <br />
+      <button onClick={handleLogin}>Login</button>&nbsp;
       <button onClick={handleSignUp}>Sign up</button>
+      <br/>
+      <button onClick={handleGoogleLogin}>Log in with Google</button>
     </form>
   );
 }
